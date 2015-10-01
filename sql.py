@@ -5,6 +5,12 @@ from sqlalchemy import Table, Column, Integer, ForeignKey, String
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.types import DateTime, Text, Enum
+import re
+
+def slug_generator(field_name):
+    def generate_slug(ctx):
+        return re.sub("[^a-z-]", "", ctx.current_parameters[field_name].lower())
+    return generate_slug
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///se390.db'
@@ -29,25 +35,29 @@ class Status(db.Model):
      # one of ("Co-op", "Graduating")
     __tablename__ = 'status'
     id = db.Column(Integer, primary_key=True)
+    slug = db.Column(String(20), default=slug_generator("status"))
     status = db.Column(String(20))
     def serialize(self):
-        return self.status
+        return {"slug": self.slug, "status": self.status}
 
 class Level(db.Model):
     # one of ("Junior", "Intermediate", "Senior", "Bachelor", "Masters", "PhD")
     __tablename__ = 'level'
     id = db.Column(Integer, primary_key=True)
+    slug = db.Column(String(20), default=slug_generator("level"))
     level = db.Column(String(20))
+
     def serialize(self):
-        return self.level
+       return {"slug": self.slug, "level": self.level}
 
 class Faculty(db.Model):
     __tablename__ = 'faculty'
     id = db.Column(Integer, primary_key=True)
+    slug = db.Column(String(20), default=slug_generator("ceca_name"))
     ceca_name = db.Column(String(250))
     nice_name = db.Column(String(250))
     def serialize(self):
-        return {"ceca_name": self.ceca_name, "nice_name": self.nice_name}
+        return {"slug": self.slug, "name": self.nice_name}
 
 class Session(db.Model):
     __tablename__ = 'session'
