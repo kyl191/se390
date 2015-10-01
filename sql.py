@@ -30,18 +30,24 @@ class Status(db.Model):
     __tablename__ = 'status'
     id = db.Column(Integer, primary_key=True)
     status = db.Column(String(20))
+    def serialize(self):
+        return self.status
 
 class Level(db.Model):
     # one of ("Junior", "Intermediate", "Senior", "Bachelor", "Masters", "PhD")
     __tablename__ = 'level'
     id = db.Column(Integer, primary_key=True)
     level = db.Column(String(20))
+    def serialize(self):
+        return self.level
 
 class Faculty(db.Model):
     __tablename__ = 'faculty'
     id = db.Column(Integer, primary_key=True)
     ceca_name = db.Column(String(250))
     nice_name = db.Column(String(250))
+    def serialize(self):
+        return {"ceca_name": self.ceca_name, "nice_name": self.nice_name}
 
 class Session(db.Model):
     __tablename__ = 'session'
@@ -55,5 +61,19 @@ class Session(db.Model):
     status = db.relationship("Status", secondary=session_status)
     level = db.relationship("Level", secondary=session_level)
     faculty = db.relationship("Faculty", secondary=session_faculty)
+
+    def serialize(self):
+        # Not really worth setting up something more complicated for this 1 case
+        return {
+            "employer" : self.employer,
+            "location" : self.location,
+            "website" : self.website,
+            "description" : self.description,
+            "start" : self.start.isoformat(),
+            "end" : self.end.isoformat(),
+            "status": [x.serialize() for x in self.status],
+            "level": [x.serialize() for x in self.level],
+            "faculty": [x.serialize() for x in self.faculty]
+        }
 
 db.create_all()
