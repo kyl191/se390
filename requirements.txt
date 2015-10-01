@@ -1,0 +1,6 @@
+beautifulsoup4
+sqlalchemy
+flask
+python-dateutil
+requests
+flask-sqlalchemy
