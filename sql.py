@@ -11,21 +11,21 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///se390.db'
 db = SQLAlchemy(app)
 
 session_status = db.Table('session_status',
-    db.Column('session_id', Integer, ForeignKey('session.id')),
-    db.Column('status_id', Integer, ForeignKey('status.id'))
+    db.Column('session_id', Integer, db.ForeignKey('session.id')),
+    db.Column('status_id', Integer, db.ForeignKey('status.id'))
 )
 
 session_level = db.Table('session_level',
-    db.Column('session_id', Integer, ForeignKey('session.id')),
-    db.Column('level_id', Integer, ForeignKey('level.id'))
+    db.Column('session_id', Integer, db.ForeignKey('session.id')),
+    db.Column('level_id', Integer, db.ForeignKey('level.id'))
 )
 
 session_faculty = db.Table('session_faculty',
-    db.Column('session_id', Integer, ForeignKey('session.id')),
-    db.Column('faculty_id', Integer, ForeignKey('faculty.id'))
+    db.Column('session_id', Integer, db.ForeignKey('session.id')),
+    db.Column('faculty_id', Integer, db.ForeignKey('faculty.id'))
 )
 
-class status(db.Model):
+class Status(db.Model):
      # one of ("Co-op", "Graduating")
     __tablename__ = 'status'
     id = db.Column(Integer, primary_key=True)
@@ -52,8 +52,8 @@ class Session(db.Model):
     location = db.Column(String(250))
     website = db.Column(String(250))
     description = db.Column(Text())
-    status = db.relationship("status", secondary=session_status)
-    level = db.relationship("level", secondary=session_level)
-    faculty = db.relationship("faculty", secondary=session_faculty)
+    status = db.relationship("Status", secondary=session_status)
+    level = db.relationship("Level", secondary=session_level)
+    faculty = db.relationship("Faculty", secondary=session_faculty)
 
 db.create_all()

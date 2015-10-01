@@ -5,18 +5,17 @@ import re
 from bs4 import BeautifulSoup
 from dateutil.relativedelta import relativedelta
 import requests
+from sql import db, Level, Status, Faculty, Session
 
 class InfoSession(object):
 
   def __init__(self, rows):
     # parse_row will try to print the employer if something goes wrong
     # Make sure something is present so we don't die completely
-    self.employer = "pre-init"
     self.employer = self.parse_row(rows[0], "Employer")
-    self.loc = self.parse_row(rows[3], "Location")
-    self.site = self.parse_row(rows[4], "Web Site")
+    self.location = self.parse_row(rows[3], "Location")
+    self.website = self.parse_row(rows[4], "Web Site")
     self.parse_description(rows[6])
-    
     self.parse_text_block(rows[5])
     date = self.parse_row(rows[1], "Date")
     time = self.parse_row(rows[2], "Time")
@@ -51,10 +50,10 @@ class InfoSession(object):
     self.end = datetime.combine(date, end_time)
 
   def strip_site(self):
-    if self.site.name == "a":
-      self.site = self.site.contents[0]
-    if self.site.startswith("http") and len(self.site) <= 8:
-      self.site = None
+    if self.website.name == "a":
+      self.website = self.website.contents[0]
+    if self.website.startswith("http") and len(self.website) <= 8:
+      self.website = None
 
   def parse_row(self, row, name, elems=2):
     r = []
@@ -100,12 +99,12 @@ class InfoSession(object):
     return status.intersection(reference)
 
   def parse_faculty(self, text):
-    return set(text.split(","))
+    return set((item.strip() for item in text.split(",")))
 
   def parse_description(self, text):
     desc = text.find("i").string
     self.description = desc if desc is not None and len(desc) is not 0 else None
-  
+
   def set_id(self, text):
     url = text.find("a").attrs['href']
     ids = re.findall("id=([0-9]+)", url)
@@ -120,7 +119,7 @@ def load_from_URL(url):
   table_rows = BeautifulSoup(p.content, "html.parser").find(id="tableform").find_all("tr")
   sessions = []
   for row in range(len(table_rows)):
-    if table_rows[row].td.contents[0] != "Employer: ":
+    if table_rows[row].td.contents[0] != "Employer: " or "No info sessions" in table_rows[row]:
       continue
     sessions.append(InfoSession(table_rows[row:row+9]))
   return sessions
@@ -131,9 +130,49 @@ def get_sessions(months=4):
     get_date =  datetime.now() + relativedelta(months=i)
     url_fmt = "http://www.ceca.uwaterloo.ca/students/sessions_details.php?id=%Y%b"
     url = get_date.strftime(url_fmt)
-    log.warn(url)
     sessions.extend(load_from_URL(url))
   return sessions
 
+def import_sessions():
+  # We trash everything and recreate the db from scratch, for convenience
+  # (all in a transaction to prevent accidentally leaving everything broken...)
+  for table in db.metadata.sorted_tables:
+    db.session.execute(table.delete())
+
+  sessions = get_sessions()
+  def get_enum_set(attrs):
+    return set([item for sublist in [getattr(session, attrs) for session in sessions if getattr(session, attrs)] for item in sublist])
+
+  def instantiate_enums(enum_set, db_type, db_field):
+    enum_map = {}
+    for enum_value in enum_set:
+      db_obj = db_type()
+      setattr(db_obj, db_field, enum_value)
+      db.session.add(db_obj)
+      enum_map[enum_value] = db_obj
+    return enum_map
+
+  level_map = instantiate_enums(get_enum_set("levels"), Level, "level")
+  status_map = instantiate_enums(get_enum_set("status"), Status, "status")
+  faculty_map = instantiate_enums(get_enum_set("faculty"), Faculty, "ceca_name")
+
+  for parsed_session in sessions:
+    session = Session()
+    session.employer = parsed_session.employer
+    session.location = parsed_session.location
+    session.start = parsed_session.start
+    session.end = parsed_session.end
+    session.website = parsed_session.website
+    session.description = parsed_session.description
+    if parsed_session.levels:
+      session.level = [level_map[level] for level in parsed_session.levels]
+    if parsed_session.faculty:
+      session.faculty = [faculty_map[faculty] for faculty in parsed_session.faculty]
+    if parsed_session.status:
+      session.status = [status_map[status] for status in parsed_session.status]
+    db.session.add(session)
+
+  db.session.commit()
+
 if __name__ == "__main__":
-  sess = get_sessions()
+  import_sessions()
