@@ -114,6 +114,36 @@ class InfoSession(object):
     # This doesn't work
     return "%s on %s (%i)" % (self.employer, self.start, self.id if not None else 0)
 
+def basic_program_name(ceca_name):
+  # All sorts of special cases in here
+  ceca_name = ceca_name.strip()
+  if ceca_name.endswith(")") and "(" not in ceca_name:
+    ceca_name = ceca_name[:-1]
+  if "GBDA" in ceca_name:
+    return "GBDA"
+  if "CPA" in ceca_name and "Arts/AFM" in ceca_name:
+    return "Arts/AFM (CPA)"
+  if ceca_name.startswith("ENG"):
+    return ceca_name.split('-')[1].strip() + " Engineering"
+  if re.match("[A-Z]{3,4}", ceca_name):
+    return ceca_name.split(' - ')[1].strip()
+  return ceca_name
+
+def apply_nice_faculty_names(faculty_map):
+  basic_name_pool = set()
+  dupe_basic_names = set()
+  for ceca_name, facultyobj in faculty_map.items():
+    nice_name = basic_program_name(ceca_name)
+    facultyobj.nice_name = nice_name
+    if nice_name in basic_name_pool:
+      dupe_basic_names.add(nice_name)
+    basic_name_pool.add(nice_name)
+
+  # Some names are duplicates as we stripped the actual faculty info
+  for ceca_name, facultyobj in faculty_map.items():
+    if facultyobj.nice_name in dupe_basic_names:
+      facultyobj.nice_name += " (%s)" % ceca_name.split('-')[0].strip().title()
+
 def load_from_URL(url):
   p = requests.get(url)
   table_rows = BeautifulSoup(p.content, "html.parser").find(id="tableform").find_all("tr")
@@ -134,20 +164,25 @@ def get_sessions(months=4):
   return sessions
 
 def import_sessions():
-  # We trash everything and recreate the db from scratch, for convenience
-  # (all in a transaction to prevent accidentally leaving everything broken...)
-  for table in db.metadata.sorted_tables:
-    db.session.execute(table.delete())
-
   sessions = get_sessions()
+
+  # We trash everything and recreate the db from scratch, for convenience
+  # (this will leave the database empty for some time... oh well. DROP TABLE can't be rolled back in a transaction.)
+  for table in db.metadata.sorted_tables:
+    db.session.execute("DROP TABLE %s" % table.name)
+  db.create_all()
+
   def get_enum_set(attrs):
     return set([item for sublist in [getattr(session, attrs) for session in sessions if getattr(session, attrs)] for item in sublist])
 
-  def instantiate_enums(enum_set, db_type, db_field):
+  def instantiate_enums(enum_set, db_type, db_field, postproc=None):
     enum_map = {}
     for enum_value in enum_set:
       db_obj = db_type()
       setattr(db_obj, db_field, enum_value)
+      if postproc:
+        for k,v in postproc(db_obj).items():
+          setattr(db_obj, k, v)
       db.session.add(db_obj)
       enum_map[enum_value] = db_obj
     return enum_map
@@ -155,6 +190,9 @@ def import_sessions():
   level_map = instantiate_enums(get_enum_set("levels"), Level, "level")
   status_map = instantiate_enums(get_enum_set("status"), Status, "status")
   faculty_map = instantiate_enums(get_enum_set("faculty"), Faculty, "ceca_name")
+
+  # It's a somewhat involved process
+  apply_nice_faculty_names(faculty_map)
 
   for parsed_session in sessions:
     session = Session()
