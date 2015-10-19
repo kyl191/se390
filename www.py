@@ -1,7 +1,7 @@
 from flask import Flask, render_template, jsonify, request
 from filtering import events_for_request
 from sql import db, Level, Status, Faculty
-from calendar import format_to_ical
+from ical_format import format_to_ical
 app = Flask(__name__)
 
 @app.route('/')
@@ -25,4 +25,4 @@ def available_filters():
     return jsonify(**filter_options_dict)
 
 if __name__ == '__main__':
-    app.run(debug=True, host="0.0.0.0")
+    app.run(debug=False, host="127.0.0.1", port=39080)
