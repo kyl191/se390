@@ -3,38 +3,37 @@
 window.addEventListener('load', function() {
     var isChromium = window.chrome,
     vendorName = window.navigator.vendor;
-    if(isChromium !== null && isChromium !== undefined && vendorName === "Google Inc.") {
-   // is Google chrome 
-    } else { 
-   alert("ALERT: This web app is currently only supported on Google Chrome.")
-    }
     
     var view = createView();
     initWindow(view);
     
-  
-    var homeButton = document.getElementById("home_button");
-    homeButton.addEventListener("click",function() {
-            hideBox("input_div");
-            showBox("welcome_div");
-    });
-    
-    var inputButton= document.getElementById('input_button');
-        inputButton.addEventListener('click', function() {
-            hideBox("welcome_div");
-            showBox("input_div");
-    });
-
     var submitButton = document.getElementById("submit_activity");
     submitButton.addEventListener("click", function(){
-        
+        var link = 'webcal://0.0.0.0:5000/api/schedule';
+        var faculty = document.getElementById("faculty").value;
+        var level = document.getElementById("level_dropdown").value;
+
+        if(faculty && level){
+            link+= '?faculty=' + faculty;
+            link+='&level=' + level;
+            link+='&status=co-op';
+        }
+        else if(faculty){
+            link+= '?faculty=' + faculty;
+            link+='&status=co-op';
+        }
+        else if(level){
+            link+='?level=' + level;
+            link+='&status=co-op';
+        }
+
+        window.location.href = link;
     });
 });
 
+
     function initWindow(classes){
         makeWelcomeUI(classes);
-        makeInputUI (classes);
-        hideBox("input_div");
     }
 
     function makeWelcomeUI (classes) {
@@ -42,10 +41,6 @@ window.addEventListener('load', function() {
         var welcomeView = new classes.welcomeMessageView(appDiv);
     }
 
-    function makeInputUI(classes) {
-        var appDiv = document.getElementById('app_container');
-        var inputView = new classes.inputActivityOptions(appDiv);
-    }
 
     function hideBox(elementId) {
         var div = document.getElementById(elementId);

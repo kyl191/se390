@@ -19,21 +19,10 @@ function createView() {
 	};
     _.extend(welcomeMessageView.prototype, AbstractView.prototype);
 
-    var inputActivityOptions = function (attachToElement) {
-	    this._instantiateInterface('input_activity_options', attachToElement);
-
-	};
-    _.extend(inputActivityOptions.prototype, AbstractView.prototype);
-
-    var updateDate = function (){
-        document.getElementById("date").innerHTML = Date();
-    }
-
-
 	return {
 		welcomeMessageView: welcomeMessageView,
-	    inputActivityOptions: inputActivityOptions,
-        updateDate: updateDate
+	    
+        
 	};
 
     
