@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, Response
 from filtering import events_for_request
 from sql import db, Level, Status, Faculty
 from ical_format import format_to_ical
@@ -15,7 +15,7 @@ def schedule():
     if content_type == "json":
         return jsonify(count=len(events), sessions=[x.serialize() for x in events])
     else:
-        return format_to_ical(events)
+        return Response(format_to_ical(events), mimetype="text/calendar")
 
 @app.route('/api/filters')
 def available_filters():
