@@ -3,9 +3,83 @@
     <head>
         <title></title>
         <link rel="stylesheet" type="text/css" href="/static/css/site.css">
+        <link rel="stylesheet" type = "text/css" href="/static/css/bootstrap.css"/>
     </head>
-    <body>
-        <h1>Info Sessions 2.0</h1>
-        {% block body %}{% endblock %}
-    </body>
+<body>
+
+<div id="app_container" class="container">
+
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <ul class="nav nav-pills navbar-right">
+                    <li><a class="navbar-brand" href="#" id = "home_button">Info Sessions 2.0</a>
+                    <li><a id = "input_button" href="#">Filter</a></li>
+                    
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    
+    <template id = "welcome_message">
+        <div id="welcome_div" class = "position_outer_center">        
+            <h1> Attend an Info Session!</h1>
+            A web app to Schedule info sessions at UWaterloo for you. 
+            <div>
+            
+             </div>
+        </div>
+    </template>
+    <!-- </div> -->
+ 
+       
+    <template id = "input_activity_options">
+    <div id="input_div">
+
+
+         <ul class = "list-inline">
+            <li id = "listname">
+            Faculty:
+            </li>
+            <li>
+                <input type="text" name="energy-level" id= "energy_level">
+            </li>
+            <li>
+                (eng-software,eng-computer)
+            </li>
+        </ul>
+
+        <ul class = "list-inline">
+            <li id = "listname">
+            Level:
+            </li>
+            <li>
+                <select id = "activity_dropdown" class = "styled-dropdown-select"> 
+                    <option>Senior</option>
+                    <option>Intermediate</option>
+                    <option>Junior</option>
+                </select>
+            </li>
+        </ul>
+
+
+
+
+        <ul class = "list-inline">
+            <li id="listname">
+                <input type="submit" name="mysubmit" value="Submit" id= "submit_activity" class = "btn btn-primary"/>
+            </li>
+        </ul>
+
+    </div>
+    </template>
+    
+
+</div>
+<script src="/static/js/ext/underscore.js"></script>
+<script src="static/js/view.js"></script>
+<script src="static/js/site.js"></script>
+</body>
+
 </html>
