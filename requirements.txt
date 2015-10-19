@@ -4,3 +4,5 @@ flask
 python-dateutil
 requests
 flask-sqlalchemy
+icalendar
+pytz
